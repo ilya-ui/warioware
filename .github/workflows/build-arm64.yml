@@ -1,0 +1,71 @@
+name: Build ARM64 Debian 12
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-arm64:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - name: Build in ARM64 Debian 12 container
+        uses: addnab/docker-run-action@v3
+        with:
+          image: arm64v8/debian:12
+          options: --platform linux/arm64 -v ${{ github.workspace }}:/workspace
+          run: |
+            set -e
+            cd /workspace
+            
+            # Install build dependencies
+            apt-get update
+            apt-get install -y \
+              build-essential \
+              git \
+              python3 \
+              libsdl1.2-dev \
+              libfreetype6-dev \
+              libcurl4-openssl-dev \
+              libopusfile-dev \
+              libopus-dev \
+              libogg-dev \
+              zlib1g-dev \
+              libgl1-mesa-dev \
+              libglu1-mesa-dev \
+              libx11-dev
+            
+            # Build bam
+            git clone https://github.com/matricks/bam /tmp/bam
+            cd /tmp/bam
+            ./make_unix.sh
+            cp bam /usr/local/bin/
+            cd /workspace
+            
+            # Configure and build
+            bam config
+            bam server_release
+            
+            # Create output directory
+            mkdir -p build-output
+            cp -v TeeWare* build-output/ 2>/dev/null || true
+            cp -v DDNet* build-output/ 2>/dev/null || true
+            ls -la build-output/
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: teeware-arm64-debian12
+          path: build-output/
+          if-no-files-found: warn
