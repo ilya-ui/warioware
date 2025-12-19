@@ -46,8 +46,8 @@ jobs:
               libglu1-mesa-dev \
               libx11-dev
             
-            # Build bam
-            git clone https://github.com/matricks/bam /tmp/bam
+            # Build bam 0.4.0 (project requires 0.4.x)
+            git clone --branch v0.4.0 --depth 1 https://github.com/matricks/bam /tmp/bam
             cd /tmp/bam
             ./make_unix.sh
             cp bam /usr/local/bin/
